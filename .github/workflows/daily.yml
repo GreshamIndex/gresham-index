@@ -1,0 +1,38 @@
+# Gresham Index — daily publisher
+# Lives at: .github/workflows/daily.yml
+name: Publish Gresham Index
+
+on:
+  schedule:
+    - cron: "47 6 * * *"   # daily 06:47 UTC (odd minute — GitHub delays popular ones)
+  workflow_dispatch:        # adds a manual "Run workflow" button
+
+permissions:
+  contents: write           # allow the workflow to commit the results
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Compute today's index
+        run: node run_daily.js
+
+      - name: Publish (commit results)
+        run: |
+          git config user.name "gresham-bot"
+          git config user.email "actions@github.com"
+          git add docs/
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "Gresham Index $(date -u +%F): $(node -e "console.log(require('./docs/latest.json').value)")"
+            git push
+          fi
