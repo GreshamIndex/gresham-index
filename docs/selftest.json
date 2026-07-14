@@ -1,0 +1,141 @@
+{
+ "all_pass": true,
+ "tolerance": 0.01,
+ "computed_at": "2026-07-14T17:54:41.602Z",
+ "results": [
+  {
+   "date": "2014-06-01",
+   "expected": 0.2586,
+   "got": 0.2586,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2015-01-14",
+   "expected": 0.028,
+   "got": 0.028,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2016-06-01",
+   "expected": 0.4536,
+   "got": 0.4536,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2017-07-25",
+   "expected": 0.7866,
+   "got": 0.7866,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2017-12-16",
+   "expected": 0.8886,
+   "got": 0.8886,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2018-12-15",
+   "expected": 0.0702,
+   "got": 0.0702,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2019-06-26",
+   "expected": 0.6877,
+   "got": 0.6877,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2020-03-16",
+   "expected": 0.175,
+   "got": 0.175,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2020-12-01",
+   "expected": 0.7089,
+   "got": 0.7089,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2021-04-13",
+   "expected": 0.9012,
+   "got": 0.9012,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2021-11-08",
+   "expected": 0.7897,
+   "got": 0.7897,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2022-06-18",
+   "expected": 0.0962,
+   "got": 0.0962,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2022-11-21",
+   "expected": 0.0613,
+   "got": 0.0613,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2023-10-01",
+   "expected": 0.2622,
+   "got": 0.2622,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2024-03-13",
+   "expected": 0.8142,
+   "got": 0.8142,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2024-11-01",
+   "expected": 0.583,
+   "got": 0.583,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2025-10-06",
+   "expected": 0.729,
+   "got": 0.729,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2026-01-15",
+   "expected": 0.3943,
+   "got": 0.3943,
+   "diff": 0,
+   "pass": true
+  },
+  {
+   "date": "2026-05-23",
+   "expected": 0.316,
+   "got": 0.316,
+   "diff": 0,
+   "pass": true
+  }
+ ],
+ "note": "Live data recomputation of the 19 frozen acceptance vectors from spec v1.0.1."
+}

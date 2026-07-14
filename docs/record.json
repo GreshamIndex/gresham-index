@@ -1,0 +1,13 @@
+{
+ "note": "As-published, append-only track record. Entries are immutable once written; every entry carries the git commit that published it.",
+ "entries": [
+  {
+   "date": "2026-07-13",
+   "value": 0.1299,
+   "zone": "stack_3x",
+   "price_usd": 62126.53,
+   "computed_at": "2026-07-14T17:54:41.602Z",
+   "stale": false
+  }
+ ]
+}
