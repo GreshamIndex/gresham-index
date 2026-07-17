@@ -1,13 +1,13 @@
 {
  "index": "Gresham Index",
  "version": "1.0.1",
- "value": 0.1381,
+ "value": 0.1388,
  "zone": "stack_3x",
  "zone_label": "Stack 3×",
  "action": "Buy 3× your base + deploy 15%/wk of reserve",
- "price_usd": 64765.06,
- "data_through": "2026-07-15",
- "computed_at": "2026-07-16T17:53:09.218Z",
+ "price_usd": 63780.14,
+ "data_through": "2026-07-16",
+ "computed_at": "2026-07-17T11:54:11.530Z",
  "stale": false,
  "attribution": "Data: CoinMetrics Community (CC BY-NC 4.0)"
 }
