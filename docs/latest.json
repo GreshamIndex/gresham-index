@@ -3,11 +3,12 @@
  "version": "1.0.1",
  "value": 0.1385,
  "zone": "stack_3x",
- "zone_label": "Stack 3×",
+ "zone_name": "Heavy Accumulation",
+ "zone_short": "Heavy Accum.",
  "action": "Buy 3× your base + deploy 15%/wk of reserve",
  "price_usd": 63915.92,
  "data_through": "2026-07-17",
- "computed_at": "2026-07-18T10:49:12.519Z",
+ "computed_at": "2026-07-18T16:35:42.191Z",
  "stale": false,
  "attribution": "Data: CoinMetrics Community (CC BY-NC 4.0)"
 }
