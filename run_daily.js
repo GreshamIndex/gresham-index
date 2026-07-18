@@ -26,14 +26,19 @@ const TEST_VECTORS = [
   ["2025-10-06",0.7290],["2026-01-15",0.3943],["2026-05-23",0.3160],
 ];
 
+// Zone ids (stack_3x…) are STABLE machine keys — already written into the
+// immutable ledger; never rename them. zone_name / zone_short are the
+// descriptive display layer (index surfaces). The action field belongs to
+// the Smart DCA strategy layer — surfaces decide where each may appear
+// (actions never sit next to zone names on index surfaces).
 function zoneOf(r) {
-  if (r < 0.15) return { zone: "stack_3x", label: "Stack 3\u00d7",  action: "Buy 3\u00d7 your base + deploy 15%/wk of reserve" };
-  if (r < 0.30) return { zone: "stack_2x", label: "Stack 2\u00d7",  action: "Buy 2\u00d7 your base + deploy 8%/wk of reserve" };
-  if (r < 0.50) return { zone: "normal",   label: "Normal 1\u00d7", action: "Buy 1\u00d7 \u2014 business as usual" };
-  if (r < 0.65) return { zone: "slow",     label: "Slow 0.5\u00d7", action: "Buy 0.5\u00d7 \u2014 let cash build" };
-  if (r < 0.75) return { zone: "hold",     label: "Hold",           action: "Grey zone \u2014 no buys, no sells" };
-  if (r < 0.85) return { zone: "sell_1_5", label: "Sell 1.5%/wk",   action: "Sell 1.5% of your stack this week" };
-  return          { zone: "sell_4",   label: "Sell 4%/wk",     action: "Sell 4% of your stack this week" };
+  if (r < 0.15) return { zone: "stack_3x", zone_name: "Heavy Accumulation",  zone_short: "Heavy Accum.",  action: "Buy 3\u00d7 your base + deploy 15%/wk of reserve" };
+  if (r < 0.30) return { zone: "stack_2x", zone_name: "Strong Accumulation", zone_short: "Strong Accum.", action: "Buy 2\u00d7 your base + deploy 8%/wk of reserve" };
+  if (r < 0.50) return { zone: "normal",   zone_name: "Accumulation",        zone_short: "Accum.",        action: "Buy 1\u00d7 \u2014 business as usual" };
+  if (r < 0.65) return { zone: "slow",     zone_name: "Light Accumulation",  zone_short: "Light Accum.",  action: "Buy 0.5\u00d7 \u2014 let cash build" };
+  if (r < 0.75) return { zone: "hold",     zone_name: "Neutral",             zone_short: "Neutral",       action: "No buys, no sells" };
+  if (r < 0.85) return { zone: "sell_1_5", zone_name: "Distribution",        zone_short: "Distrib.",      action: "Sell 1.5% of your stack this week" };
+  return          { zone: "sell_4",   zone_name: "Heavy Distribution",  zone_short: "Heavy Distrib.", action: "Sell 4% of your stack this week" };
 }
 
 async function fetchAllRows() {
@@ -84,7 +89,7 @@ function writeJSON(file, data) {
   // latest.json
   writeJSON("latest.json", {
     index: "Gresham Index", version: "1.0.1",
-    value: r, zone: z.zone, zone_label: z.label, action: z.action,
+    value: r, zone: z.zone, zone_name: z.zone_name, zone_short: z.zone_short, action: z.action,
     price_usd: Math.round(price[li] * 100) / 100,
     data_through: dataThrough, computed_at: computedAt, stale,
     attribution: ATTR,
