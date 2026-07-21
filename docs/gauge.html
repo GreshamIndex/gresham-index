@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gresham Index — Live Gauge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:#0a1018;padding:24px;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#7DD957}a:hover{color:#a6e88a}
+  .gcard{width:min(420px,100%);border-radius:18px;padding:22px 22px 18px;box-shadow:0 8px 30px rgba(0,0,0,.4);
+         background:linear-gradient(155deg,#152233,#0E1621);color:#E8EDF4;border:1px solid #223244;--mut:#8A94A6;--hair:#223244}
+  .ghdr{font-size:11px;letter-spacing:.18em;color:var(--mut);font-weight:700}
+  .gsvg{width:100%;height:auto;display:block;margin:4px auto 0}
+  #ro{text-align:center;margin:6px 0 2px}
+  .hair{border:none;border-top:1px solid var(--hair);margin:15px 0 11px}
+  .legend{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:2px;justify-content:center}
+  .legend span{font-size:9.5px;color:var(--mut);display:flex;align-items:center;gap:5px}
+  .legend i{width:12px;height:3px;border-radius:2px;display:inline-block}
+  .foot{margin-top:10px;font-size:9.5px;color:var(--mut);line-height:1.5;text-align:center}
+  .foot b{color:inherit;font-weight:700}
+</style>
+</head>
+<body>
+<div class="gcard">
+  <div class="ghdr">GRESHAM INDEX · BITCOIN CYCLE RISK</div>
+  <svg id="gauge" class="gsvg" viewBox="0 0 400 205"></svg>
+  <div id="ro"></div>
+  <hr class="hair">
+  <div class="legend" id="legend"></div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+  const EDGES = [0, 0.15, 0.30, 0.50, 0.65, 0.75, 0.85, 1.0];
+  const NAMES = ["Heavy Accumulation","Strong Accumulation","Accumulation","Light Accumulation","Neutral","Distribution","Heavy Distribution"];
+  const SHORT = ["Heavy Accum.","Strong Accum.","Accum.","Light Accum.","Neutral","Distrib.","Heavy Distrib."];
+  const COLORS = ["#0E7A4B","#22B463","#7DD957","#F0C23D","#7E8AA0","#F2853F","#E5484D"];
+  const NEEDLE = "#F2F6FC", AXIS = "#7C889B";
+  const VALF = "'Space Grotesk',system-ui,sans-serif";
+  const idxOf = r => { let k = 0; for (let i = 0; i < 7; i++) if (r >= EDGES[i]) k = i; return k; };
+  const $ = id => document.getElementById(id);
+
+  const CX = 200, CY = 186, R1 = 176, R0 = 118, GAP = 1.4;
+  const pol = (r, aDeg) => { const a = Math.PI * (1 - aDeg / 180); return [CX + r * Math.cos(a), CY - r * Math.sin(a)]; };
+
+  function drawGauge(val){
+    const svg = $("gauge"); svg.innerHTML = "";
+    for (let i = 0; i < 7; i++){
+      const a0 = EDGES[i] * 180 + (i > 0 ? GAP / 2 : 0);
+      const a1 = EDGES[i + 1] * 180 - (i < 6 ? GAP / 2 : 0);
+      const large = (a1 - a0) > 180 ? 1 : 0;
+      const [x0, y0] = pol(R1, a0), [x1, y1] = pol(R1, a1), [x2, y2] = pol(R0, a1), [x3, y3] = pol(R0, a0);
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", "M " + x0 + " " + y0 + " A " + R1 + " " + R1 + " 0 " + large + " 1 " + x1 + " " + y1 + " L " + x2 + " " + y2 + " A " + R0 + " " + R0 + " 0 " + large + " 0 " + x3 + " " + y3 + " Z");
+      p.setAttribute("fill", COLORS[i]); svg.appendChild(p);
+    }
+    const a = Math.max(0, Math.min(1, val)) * 180;
+    const [nx, ny] = pol(R0 - 16, a), [bx, by] = pol(30, a);
+    const ln = document.createElementNS(NS, "line");
+    ln.setAttribute("x1", bx); ln.setAttribute("y1", by); ln.setAttribute("x2", nx); ln.setAttribute("y2", ny);
+    ln.setAttribute("stroke", NEEDLE); ln.setAttribute("stroke-width", "5"); ln.setAttribute("stroke-linecap", "round");
+    svg.appendChild(ln);
+    const hub = document.createElementNS(NS, "circle");
+    hub.setAttribute("cx", CX); hub.setAttribute("cy", CY); hub.setAttribute("r", "9"); hub.setAttribute("fill", NEEDLE);
+    svg.appendChild(hub);
+  }
+  function setReadout(val, meta){
+    const i = idxOf(val);
+    $("ro").innerHTML =
+      '<div style="font:700 46px/1 ' + VALF + ';color:' + NEEDLE + ';letter-spacing:-.01em">' + val.toFixed(3) + '</div>' +
+      '<div style="font:700 17px/1.3 ' + VALF + ';color:' + COLORS[i] + ';margin-top:8px">' + NAMES[i] + ' zone</div>' +
+      '<div style="font:500 11px/1.4 ' + VALF + ';color:' + AXIS + ';margin-top:6px">' + meta + '</div>';
+  }
+  $("legend").innerHTML = NAMES.map(function(n, i){ return '<span><i style="background:' + COLORS[i] + '"></i>' + SHORT[i] + '</span>'; }).join("");
+
+  drawGauge(0.316); setReadout(0.316, "loading live data\u2026");
+
+  const LIVE_URLS = [
+    "https://greshamindex.github.io/gresham-index/latest.json",
+    "https://raw.githubusercontent.com/greshamindex/gresham-index/main/docs/latest.json"
+  ];
+  (async function(){
+    for (const url of LIVE_URLS){
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) continue;
+        const j = await res.json();
+        if (typeof j.value !== "number") continue;
+        drawGauge(j.value);
+        setReadout(j.value, "live \u00b7 through " + (j.data_through || "") + (j.stale ? " \u00b7 \u26a0 stale" : ""));
+        $("foot").innerHTML = "<b>Live</b> \u00b7 through " + (j.data_through || "") + " \u00b7 frozen v1.0.1 rules \u00b7 Data: CoinMetrics Community (CC BY-NC 4.0)";
+        return;
+      } catch (e) { /* try next */ }
+    }
+    setReadout(0.316, "data unavailable \u2014 live feed offline");
+    $("foot").innerHTML = "frozen v1.0.1 rules \u00b7 Data: CoinMetrics Community (CC BY-NC 4.0)";
+  })();
+})();
+</script>
+<script>
+(function(){
+  var ID = "gauge";
+  function h(){ var b = document.body, e = document.documentElement;
+    return Math.max(b.scrollHeight, b.offsetHeight, e.scrollHeight, e.offsetHeight); }
+  var last = 0;
+  function post(){ var v = h(); if (Math.abs(v - last) < 2) return; last = v;
+    parent.postMessage({ type: "gresham-embed-height", id: ID, height: v }, "*"); }
+  window.addEventListener("load", function(){ post(); setTimeout(post, 300); setTimeout(post, 1200); });
+  window.addEventListener("resize", post);
+  if (window.ResizeObserver){ try { new ResizeObserver(post).observe(document.body); } catch(e){} }
+  setInterval(post, 2000);
+})();
+</script>
+</body>
+</html>
