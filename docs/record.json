@@ -80,6 +80,14 @@
    "price_usd": 65983.19,
    "computed_at": "2026-07-23T12:14:34.457Z",
    "stale": false
+  },
+  {
+   "date": "2026-07-23",
+   "value": 0.1562,
+   "zone": "stack_2x",
+   "price_usd": 65094.41,
+   "computed_at": "2026-07-24T12:06:11.954Z",
+   "stale": false
   }
  ]
 }
