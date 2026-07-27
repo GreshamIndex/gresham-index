@@ -6,9 +6,9 @@
  "zone_name": "Strong Accumulation",
  "zone_short": "Strong Accum.",
  "action": "Buy 2× your base + deploy 8%/wk of reserve",
- "price_usd": 64331.33,
- "data_through": "2026-07-25",
- "computed_at": "2026-07-26T16:39:47.113Z",
+ "price_usd": 65328.79,
+ "data_through": "2026-07-26",
+ "computed_at": "2026-07-27T16:01:04.838Z",
  "stale": false,
  "attribution": "Data: CoinMetrics Community (CC BY-NC 4.0)"
 }
