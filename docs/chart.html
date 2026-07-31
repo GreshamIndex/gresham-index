@@ -4,30 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gresham Index — Live History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed');</script>
 <style>
   :root{
-    --bg:#0E1520; --card:#17212F; --line:#243247; --text:#E8EDF4; --muted:#8A94A6;
+    --bg:#0a1018; --line:#223244; --text:#E8EDF4; --muted:#8A94A6;
     --z0:#15803D; --z1:#22C55E; --z2:#FACC15; --z3:#F59E0B; --z4:#94A3B8; --z5:#F97316; --z6:#DC2626;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px;display:flex;justify-content:center}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 12px;max-width:1060px;width:100%}
+  :root{--f-disp:'Space Grotesk',system-ui,sans-serif;
+        --f-body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+        --f-mono:'IBM Plex Mono',ui-monospace,monospace}
+  body{background:var(--bg);color:var(--text);font-family:var(--f-body);
+       padding:16px;display:flex;justify-content:center}
+  .card{background:linear-gradient(155deg,#152233,#0E1621);border:1px solid var(--line);border-radius:18px;
+        padding:20px 20px 14px;max-width:1060px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  html.embed body{padding:0;background:transparent;display:block}
+  html.embed .card{max-width:none;box-shadow:none}
   .head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-  .kicker{font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:600}
-  .ranges{display:flex;gap:6px}
-  .ranges button{background:none;border:1px solid var(--line);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:999px;cursor:pointer}
+  .kicker{font-family:var(--f-disp);font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:500}
+  .kicker b{color:var(--text);font-weight:500}   /* same size and weight — colour only */
+  .ranges{display:flex;gap:6px;align-items:center}
+  .ranges button{font-family:var(--f-body);background:none;border:1px solid var(--line);color:var(--muted);font-size:11px;
+                 padding:3px 10px;border-radius:999px;cursor:pointer}
   .ranges button.on{color:var(--text);border-color:#3B4C66;background:#1C2836}
   #wrap{position:relative}
-  canvas{width:100%;display:block;cursor:crosshair}
+  canvas{width:100%;display:block;touch-action:pan-y}
+  #cvo{position:absolute;left:0;top:0;pointer-events:none}
   #tip{position:absolute;pointer-events:none;background:#0B111Aee;border:1px solid var(--line);border-radius:10px;
        padding:8px 11px;font-size:12.5px;line-height:1.5;display:none;white-space:nowrap;z-index:5}
-  #tip .d{color:var(--muted);font-size:11px}
-  #tip .p{font-weight:700;font-size:14px}
-  #tip .z{display:inline-block;margin-top:2px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#0B111A}
+  #tip .d{font-family:var(--f-mono);color:var(--muted);font-size:11px}
+  #tip .p{font-family:var(--f-disp);font-weight:700;font-size:14px}
+  #tip .z{font-family:var(--f-body);display:inline-block;margin-top:2px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#0B111A}
   .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px}
-  .legend span{font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .legend span{font-family:var(--f-body);font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
   .legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
-  .foot{margin-top:8px;font-size:10.5px;color:var(--muted)}
+  .foot{font-family:var(--f-body);margin-top:8px;font-size:10.5px;color:var(--muted)}
+  .foot .mono{font-family:var(--f-mono)}
   .foot b{color:var(--text);font-weight:600}
   #state{padding:60px 0;text-align:center;color:var(--muted);font-size:13px}
 </style>
@@ -35,14 +50,15 @@
 <body>
 <div class="card">
   <div class="head">
-    <div class="kicker">GRESHAM INDEX — BITCOIN, COLORED BY CYCLE RISK</div>
+    <div class="kicker"><b>GRESHAM INDEX</b> — BITCOIN, COLORED BY CYCLE RISK</div>
     <div class="ranges" id="ranges">
       <button data-y="0" class="on">All</button><button data-y="4">4y</button><button data-y="1">1y</button>
     </div>
   </div>
   <div id="wrap">
-    <div id="state">loading live data\u2026</div>
-    <canvas id="cv" height="420" style="display:none"></canvas>
+    <div id="state">loading live data…</div>
+    <canvas id="cv" style="display:none"></canvas>
+    <canvas id="cvo" style="display:none"></canvas>
     <div id="tip"></div>
   </div>
   <div class="legend" id="legend"></div>
@@ -52,180 +68,385 @@
 <script>
 (function(){
 "use strict";
-const URL_HIST = "https://greshamindex.github.io/gresham-index/history.json";
-const BANDS = [
-  {lo:0.00, c:"#15803D", n:"Heavy Accumulation",  s:"Heavy Accum."},
-  {lo:0.15, c:"#22C55E", n:"Strong Accumulation", s:"Strong Accum."},
-  {lo:0.30, c:"#FACC15", n:"Accumulation",        s:"Accum."},
-  {lo:0.50, c:"#F59E0B", n:"Light Accumulation",  s:"Light Accum."},
-  {lo:0.65, c:"#94A3B8", n:"Neutral",             s:"Neutral", divider:true},
-  {lo:0.75, c:"#F97316", n:"Distribution",        s:"Distrib."},
-  {lo:0.85, c:"#DC2626", n:"Heavy Distribution",  s:"Heavy Distrib."},
-];
-function band(r){ let b=BANDS[0]; for(const x of BANDS){ if(r>=x.lo) b=x; } return b; }
+const URLS=["https://greshamindex.github.io/gresham-index/history.json",
+            "https://raw.githubusercontent.com/greshamindex/gresham-index/main/docs/history.json"];
+const BANDS=[
+  {lo:0.00,c:"#15803D",n:"Heavy Accumulation", s:"Heavy Accum."},
+  {lo:0.15,c:"#22C55E",n:"Strong Accumulation",s:"Strong Accum."},
+  {lo:0.30,c:"#FACC15",n:"Accumulation",       s:"Accum."},
+  {lo:0.50,c:"#F59E0B",n:"Light Accumulation", s:"Light Accum."},
+  {lo:0.65,c:"#94A3B8",n:"Neutral",            s:"Neutral",divider:true},
+  {lo:0.75,c:"#F97316",n:"Distribution",       s:"Distrib."},
+  {lo:0.85,c:"#DC2626",n:"Heavy Distribution", s:"Heavy Distrib."}];
+function band(r){let b=BANDS[0];for(const x of BANDS){if(r>=x.lo)b=x;}return b;}
 
-const cv=document.getElementById("cv"), tip=document.getElementById("tip"),
+const cv=document.getElementById("cv"), cvo=document.getElementById("cvo"), tip=document.getElementById("tip"),
       state=document.getElementById("state"), wrap=document.getElementById("wrap");
-let D=[], view=[], years=0, px=[], layout=null;
+const DAY=86400000;
 
-// legend
-document.getElementById("legend").innerHTML =
+let D=[];                      // {t,d,r,p}
+let T_MIN=0,T_MAX=0;
+let win={t0:0,t1:0};           // visible time window
+let yZoom=1;                   // >1 taller, <1 flatter
+let geo=null;                  // plot geometry from last draw
+let hoverIdx=null;
+const PADL=56,PADR=14,PADT=10,PADB=26;
+
+document.getElementById("legend").innerHTML=
   BANDS.map(b=>`<span><i style="background:${b.c}"></i>${b.n}</span>`).join("");
+fetch(URLS[0]).then(r=>{if(!r.ok)throw 0;return r.json();})
+  .catch(()=>fetch(URLS[1]).then(r=>r.json()))
+  .then(j=>{
+    D=j.series.filter(s=>s[0]>="2014-01-01")
+      .map(s=>({t:Date.parse(s[0]+"T00:00:00Z"),d:s[0],r:s[1],p:s[2]}));
+    if(D.length<100) throw new Error("series too short");
+    T_MIN=D[0].t; T_MAX=D[D.length-1].t;
+    win={t0:T_MIN,t1:T_MAX};
+    const last=D[D.length-1];
+    document.getElementById("foot").innerHTML=
+      `<b>Live</b> · data through <span class="mono">${last.d}</span> · latest reading <b style="font-family:var(--f-disp)">${last.r.toFixed(3)}</b> — ${band(last.r).n}`+
+      ` · frozen v1.0.1 rules · Data: CoinMetrics Community (CC BY-NC 4.0)`;
+    state.style.display="none"; cv.style.display="block"; document.getElementById("cvo").style.display="block";
+    draw();
+  }).catch(e=>{ state.textContent="Could not load live data. Please refresh."; });
 
-fetch(URL_HIST).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
-.then(j=>{
-  D = j.series
-    .filter(s=>s[0]>="2014-01-01")
-    .map(s=>({t:Date.parse(s[0]+"T00:00:00Z"), d:s[0], r:s[1], p:s[2]}));
-  if(D.length<100) throw new Error("series too short");
-  const last=D[D.length-1];
-  document.getElementById("foot").innerHTML =
-    `<b>Live</b> \u00b7 data through ${last.d} \u00b7 latest reading <b>${last.r.toFixed(2)}</b> \u2014 ${band(last.r).n}`+
-    ` \u00b7 frozen v1.0.1 rules \u00b7 Data: CoinMetrics Community (CC BY-NC 4.0)`;
-  state.style.display="none"; cv.style.display="block";
-  setView(); draw();
-}).catch(e=>{ state.textContent="Could not load live data ("+e.message+"). Please refresh."; });
+/* ---------- helpers ---------- */
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function idxAt(t){ let lo=0,hi=D.length-1; while(hi-lo>1){const m=(lo+hi)>>1; D[m].t<t?lo=m:hi=m;} return lo; }
+function setWindow(t0,t1){
+  let span=clamp(t1-t0, 30*DAY, T_MAX-T_MIN);
+  t0=clamp(t0, T_MIN, T_MAX-span);
+  win.t0=t0; win.t1=t0+span;
+}
+function zoomAt(tAnchor,factor){
+  const span=clamp((win.t1-win.t0)*factor, 30*DAY, T_MAX-T_MIN);
+  const frac=(tAnchor-win.t0)/(win.t1-win.t0);
+  setWindow(tAnchor-frac*span, tAnchor-frac*span+span);
+}
+function clearPresets(){ document.querySelectorAll("#ranges button").forEach(b=>b.classList.remove("on")); }
 
-function setView(){
-  if(!years){ view=D; return; }
-  const cut = D[D.length-1].t - years*365.25*86400000;
-  view = D.filter(x=>x.t>=cut);
+/* ---------- ticks ---------- */
+function genTicks(t0,t1,step){
+  const out=[], d0=new Date(t0), YR=365.25*DAY, MO=30.44*DAY;
+  if(step.k==="y"){
+    const inc=Math.max(1,Math.round(step.ms/YR));
+    let y=Math.ceil(d0.getUTCFullYear()/inc)*inc;
+    if(Date.UTC(y,0,1)<t0) y+=inc;
+    for(;Date.UTC(y,0,1)<=t1;y+=inc) out.push({t:Date.UTC(y,0,1),l:String(y)});
+  }else if(step.k==="m"){
+    const inc=Math.max(1,Math.round(step.ms/MO));
+    let y=d0.getUTCFullYear(), m=Math.ceil(d0.getUTCMonth()/inc)*inc;
+    if(m>11){m=0;y++;}
+    for(let tt=Date.UTC(y,m,1); tt<=t1;){
+      if(tt>=t0){
+        const dt=new Date(tt);
+        let l=dt.toLocaleDateString("en",{month:"short",timeZone:"UTC"});
+        if(dt.getUTCMonth()===0) l+=" "+dt.getUTCFullYear();      // year at each January
+        out.push({t:tt,l});
+      }
+      m+=inc; if(m>11){m-=12;y++;} tt=Date.UTC(y,m,1);
+    }
+  }else{
+    const inc=step.ms;
+    for(let tt=Math.ceil(t0/inc)*inc; tt<=t1; tt+=inc){
+      const dt=new Date(tt);
+      let l=dt.toLocaleDateString("en",{day:"numeric",month:"short",timeZone:"UTC"});
+      if(dt.getUTCMonth()===0 && dt.getUTCDate()<=inc/DAY) l+=" "+dt.getUTCFullYear();
+      out.push({t:tt,l});
+    }
+  }
+  if(out.length && !/\d{4}/.test(out[0].l)) out[0].l+=" "+new Date(out[0].t).getUTCFullYear();
+  return out;
 }
 
-document.getElementById("ranges").addEventListener("click", ev=>{
-  const b=ev.target.closest("button"); if(!b) return;
-  document.querySelectorAll("#ranges button").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on"); years=+b.dataset.y; setView(); draw();
-});
+// densest step whose MEASURED labels still fit the axis
+function xTicks(t0,t1,pxWidth,g){
+  const YR=365.25*DAY, MO=30.44*DAY;
+  const cand=[{ms:DAY,k:"d"},{ms:2*DAY,k:"d"},{ms:7*DAY,k:"d"},{ms:14*DAY,k:"d"},
+              {ms:MO,k:"m"},{ms:3*MO,k:"m"},{ms:6*MO,k:"m"},
+              {ms:YR,k:"y"},{ms:2*YR,k:"y"},{ms:5*YR,k:"y"},{ms:10*YR,k:"y"}];
+  let best=null;
+  for(const s of cand){
+    if((t1-t0)/s.ms > 400) continue;                 // skip absurdly dense candidates
+    const ticks=genTicks(t0,t1,s);
+    if(!ticks.length) continue;
+    best=ticks;
+    let wSum=0;
+    for(const tk of ticks) wSum+=g.measureText(tk.l).width+12;   // real widths, not the worst one
+    if(wSum <= pxWidth) return ticks;                            // fits — densest wins
+  }
+  return best||[];
+}
+
+/* ---------- y ticks: nice values for whatever range is visible ---------- */
+function yTicks(lo,hi){          // lo/hi are log10 bounds
+  const out=[], dec=hi-lo;
+  if(dec>=0.95){
+    const mults = dec>3.2 ? [1] : dec>1.9 ? [1,3] : [1,2,5];
+    for(let e=Math.floor(lo);e<=Math.ceil(hi);e++)
+      for(const m of mults){
+        const p=m*Math.pow(10,e), L=Math.log10(p);
+        if(L>=lo&&L<=hi) out.push(p);
+      }
+  }else{                          // zoomed into a narrow band — linear nice steps
+    const a=Math.pow(10,lo), b=Math.pow(10,hi);
+    const raw=(b-a)/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/mag;
+    const stp=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
+    for(let p=Math.ceil(a/stp)*stp; p<=b; p+=stp) if(p>0) out.push(p);
+  }
+  return out;
+}
+// tracked text — computed manually so letter-spacing is identical across browsers
+function trackedWidth(g,txt,track){ let w=0; for(const ch of txt) w+=g.measureText(ch).width+track; return w; }
+function trackedText(g,txt,x,y,track){ let cx=x; for(const ch of txt){ g.fillText(ch,cx,y); cx+=g.measureText(ch).width+track; } return cx; }
+
+// permanent wordmark inside the plot — anchored to the viewport, never pans or zooms
+function drawWatermark(g,x1,y1,W){
+  const size = W<520 ? 11 : 13;
+  const track = size*0.06;
+  g.save();
+  g.font = "500 "+size+"px 'Space Grotesk',system-ui,sans-serif";
+  g.textAlign="left"; g.textBaseline="alphabetic";
+  const A="GRESHAM", B=" INDEX";
+  const wA=trackedWidth(g,A,track), wB=trackedWidth(g,B,track);
+  const x = x1 - 16 - (wA+wB), y = y1 - 14;
+  g.globalAlpha = 0.45;
+  g.fillStyle = "#E8EDF4"; const mid = trackedText(g,A,x,y,track);
+  g.fillStyle = "#8A94A6"; trackedText(g,B,mid,y,track);
+  g.restore();
+}
+
+function fmtPrice(p){
+  return "$"+p.toLocaleString("en",{maximumFractionDigits: p<10?2 : p<1000?1 : 0});
+}
+
+/* ---------- draw ---------- */
+let rafPending=false;
+function requestDraw(){ if(rafPending) return; rafPending=true;
+  requestAnimationFrame(()=>{ rafPending=false; draw(); }); }
 
 function draw(){
+  if(!D.length) return;
   const dpr=window.devicePixelRatio||1;
   const W=cv.clientWidth||wrap.clientWidth;
-  // responsive height: ~9:16 of width, clamped so it's never cramped or over-tall.
-  // portrait phones get a shorter, wider-feeling chart instead of a stretched column.
-  const H=Math.round(Math.max(300, Math.min(460, W*0.62)));
-  cv.style.height=H+"px";
-  cv.width=W*dpr; cv.height=H*dpr;
-  const g=cv.getContext("2d"); g.scale(dpr,dpr);
-  const padL=56, padR=14, padT=10, padB=26;
-  const x0=padL, x1=W-padR, y0=padT, y1=H-padB;
-
-  const t0=view[0].t, t1=view[view.length-1].t;
-  let pmin=Infinity, pmax=0;
-  for(const v of view){ if(v.p<pmin)pmin=v.p; if(v.p>pmax)pmax=v.p; }
-  const lmin=Math.log10(pmin)-0.06, lmax=Math.log10(pmax)+0.06;
-  const X=t=>x0+(t-t0)/(t1-t0)*(x1-x0);
-  const Y=p=>y1-(Math.log10(p)-lmin)/(lmax-lmin)*(y1-y0);
-  layout={x0,x1,t0,t1,y0,y1};
-
+  const H=Math.round(clamp(W*0.62,300,460));
+  // reallocating the canvas buffer is expensive — only do it when the size actually changed
+  if(cv.width!==Math.round(W*dpr) || cv.height!==Math.round(H*dpr)){
+    cv.style.height=H+"px";  cv.width=Math.round(W*dpr);  cv.height=Math.round(H*dpr);
+    cvo.style.height=H+"px"; cvo.width=Math.round(W*dpr); cvo.height=Math.round(H*dpr);
+    cvo.style.width="100%";
+  }
+  const g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
   g.clearRect(0,0,W,H);
+  const x0=PADL,x1=W-PADR,y0=PADT,y1=H-PADB;
 
-  // y grid: powers of 10 and 3x steps within range
-  g.strokeStyle="#1C2836"; g.fillStyle="#8A94A6"; g.font="10.5px system-ui"; g.textAlign="right";
-  for(let e=2;e<=6;e++){
-    for(const m of [1,3]){
-      const p=m*Math.pow(10,e);
-      if(Math.log10(p)<lmin||Math.log10(p)>lmax) continue;
-      const y=Y(p);
-      g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.stroke();
-      g.fillText("$"+p.toLocaleString(), x0-7, y+3.5);
-    }
+  const ia=Math.max(0,idxAt(win.t0)), ib=Math.min(D.length-1,idxAt(win.t1)+1);
+  let pmin=Infinity,pmax=0;
+  for(let i=ia;i<=ib;i++){const p=D[i].p; if(p<pmin)pmin=p; if(p>pmax)pmax=p;}
+  if(!(pmin<pmax)){pmin=pmin*0.9;pmax=pmax*1.1;}
+  let lo=Math.log10(pmin)-0.06, hi=Math.log10(pmax)+0.06;
+  const mid=(lo+hi)/2, half=(hi-lo)/2/yZoom;
+  lo=mid-half; hi=mid+half;
+
+  const X=t=>x0+(t-win.t0)/(win.t1-win.t0)*(x1-x0);
+  const Y=p=>y1-(Math.log10(p)-lo)/(hi-lo)*(y1-y0);
+  geo={x0,x1,y0,y1,W,H,ia,ib,X,Y,dpr};
+  g.font="10.5px 'Space Grotesk',system-ui,sans-serif"; g.textAlign="right"; g.fillStyle="#8A94A6";
+  for(const p of yTicks(lo,hi)){
+    const y=Y(p);
+    g.strokeStyle="#1C2836"; g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.stroke();
+    g.fillText(fmtPrice(p), x0-7, y+3.5);
   }
-  // x grid: year ticks (or months if short view)
   g.textAlign="center";
-  const d0=new Date(t0), d1=new Date(t1);
-  const spanY=(t1-t0)/31557600000;
-  if(spanY>2.2){
-    const yr0=d0.getUTCFullYear()+1, yr1=d1.getUTCFullYear(), nyr=yr1-yr0+1;
-    // thin labels so each has ~46px of room; gridlines stay on every year
-    const step=Math.max(1, Math.ceil(nyr*46/(x1-x0)));
-    for(let y=yr0;y<=yr1;y++){
-      const t=Date.UTC(y,0,1); if(t<t0||t>t1) continue;
-      const x=X(t);
-      g.strokeStyle="#1C2836"; g.beginPath(); g.moveTo(x,y0); g.lineTo(x,y1); g.stroke();
-      if((yr1-y)%step===0) g.fillText(String(y), x, H-8);   // anchor newest year, thin backwards
-    }
-  } else {
-    const monthStep=(x1-x0)<420?6:3;   // fewer month ticks on narrow screens
-    for(let y=d0.getUTCFullYear();y<=d1.getUTCFullYear();y++)
-      for(let m=0;m<12;m+=monthStep){
-        const t=Date.UTC(y,m,1); if(t<t0||t>t1) continue;
-        const x=X(t);
-        g.strokeStyle="#1C2836"; g.beginPath(); g.moveTo(x,y0); g.lineTo(x,y1); g.stroke();
-        g.fillText(new Date(t).toLocaleDateString("en",{month:"short",year:"2-digit",timeZone:"UTC"}), x, H-8);
-      }
+  for(const tk of xTicks(win.t0,win.t1,x1-x0,g)){
+    const x=X(tk.t); if(x<x0-1||x>x1+1) continue;
+    g.strokeStyle="#1C2836"; g.beginPath(); g.moveTo(x,y0); g.lineTo(x,y1); g.stroke();
+    g.fillText(tk.l,x,H-8);
   }
+  // axis affordances
+  g.strokeStyle="#243247"; g.lineWidth=1;
+  g.beginPath(); g.moveTo(x0,y0); g.lineTo(x0,y1); g.lineTo(x1,y1); g.stroke();
 
-  // colored price line: batch consecutive same-color segments
-  px=new Array(view.length);
-  for(let i=0;i<view.length;i++) px[i]=X(view[i].t);
-  g.lineWidth=spanY>6?1.6:2.2; g.lineJoin="round"; g.lineCap="round";
-  let i=0;
-  while(i<view.length-1){
-    const c=band(view[i].r).c;
-    g.strokeStyle=c; g.beginPath(); g.moveTo(px[i],Y(view[i].p));
+  g.save(); g.beginPath(); g.rect(x0,y0,x1-x0,y1-y0); g.clip();
+  drawWatermark(g,x1,y1,W);          // above gridlines, below the data
+  const span=(win.t1-win.t0)/DAY;
+  g.lineWidth=span>2500?1.6:2.2; g.lineJoin="round"; g.lineCap="round";
+  let i=ia;
+  while(i<ib){
+    const c=band(D[i].r).c;
+    g.strokeStyle=c; g.beginPath(); g.moveTo(X(D[i].t),Y(D[i].p));
     let j=i+1;
-    while(j<view.length && band(view[j-1].r).c===c){ g.lineTo(px[j],Y(view[j].p)); j++; }
+    while(j<=ib && band(D[j-1].r).c===c){ g.lineTo(X(D[j].t),Y(D[j].p)); j++; }
     g.stroke(); i=j-1;
   }
-  cv._Y=Y;
+  g.restore();
+  drawOverlay();
 }
 
-// hover / touch crosshair
-function locate(clientX){
-  const rect=cv.getBoundingClientRect();
-  const x=clientX-rect.left;
-  if(!view.length||!layout) return null;
-  const t=layout.t0+(x-layout.x0)/(layout.x1-layout.x0)*(layout.t1-layout.t0);
-  let lo=0, hi=view.length-1;
-  while(hi-lo>1){ const m=(lo+hi)>>1; (view[m].t<t)?lo=m:hi=m; }
-  return (Math.abs(view[lo].t-t)<Math.abs(view[hi].t-t))?lo:hi;
+// crosshair only — cheap, runs on every mouse move
+function drawOverlay(){
+  if(!geo) return;
+  const o=cvo.getContext("2d");
+  o.setTransform(geo.dpr,0,0,geo.dpr,0,0);
+  o.clearRect(0,0,geo.W,geo.H);
+  if(hoverIdx===null || hoverIdx<geo.ia || hoverIdx>geo.ib) return;
+  const v=D[hoverIdx], b=band(v.r), x=geo.X(v.t), y=geo.Y(v.p);
+  if(x<geo.x0||x>geo.x1) return;
+  o.strokeStyle="#3B4C66"; o.setLineDash([4,4]); o.lineWidth=1;
+  o.beginPath(); o.moveTo(x,geo.y0); o.lineTo(x,geo.y1); o.stroke(); o.setLineDash([]);
+  o.fillStyle=b.c; o.beginPath(); o.arc(x,y,4.5,0,7); o.fill();
+  o.strokeStyle="#0E1520"; o.lineWidth=1.5; o.stroke();
 }
-function showTip(i, clientX){
-  const v=view[i], b=band(v.r), rect=cv.getBoundingClientRect();
-  draw();
-  const g=cv.getContext("2d");
-  const x=px[i], y=cv._Y(v.p);
-  g.strokeStyle="#3B4C66"; g.setLineDash([4,4]); g.lineWidth=1;
-  g.beginPath(); g.moveTo(x,layout.y0); g.lineTo(x,layout.y1); g.stroke(); g.setLineDash([]);
-  g.fillStyle=b.c; g.beginPath(); g.arc(x,y,4.5,0,7); g.fill();
-  g.strokeStyle="#0E1520"; g.lineWidth=1.5; g.stroke();
+
+/* ---------- tooltip ---------- */
+function showTip(clientX){
+  if(!geo) return;
+  const rect=cv.getBoundingClientRect();
+  const t=win.t0+(clientX-rect.left-geo.x0)/(geo.x1-geo.x0)*(win.t1-win.t0);
+  let k=idxAt(t); if(k+1<D.length && Math.abs(D[k+1].t-t)<Math.abs(D[k].t-t)) k++;
+  k=clamp(k,geo.ia,geo.ib);
+  hoverIdx=k; drawOverlay();
+  const v=D[k], b=band(v.r);
   const dt=new Date(v.t).toLocaleDateString("en",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});
   tip.innerHTML=`<div class="d">${dt}</div><div class="p">$${Math.round(v.p).toLocaleString()}</div>`+
-    `<div>Gresham Index <b>${v.r.toFixed(2)}</b></div><div class="z" style="${b.divider?`background:none;border:1px solid ${b.c};color:${b.c}`:`background:${b.c}`}">${b.s}</div>`;
+    `<div>Gresham Index <b style="font-family:var(--f-disp)">${v.r.toFixed(3)}</b></div>`+
+    `<div class="z" style="${b.divider?`background:none;border:1px solid ${b.c};color:${b.c}`:`background:${b.c}`}">${b.s}</div>`;
   tip.style.display="block";
-  const tw=tip.offsetWidth;
-  let left=x+14; if(left+tw>rect.width-8) left=x-tw-14;
-  tip.style.left=left+"px"; tip.style.top="14px";
+  const x=geo.X(v.t), tw=tip.offsetWidth;
+  tip.style.left=(x+14+tw>geo.W-4? x-tw-14 : x+14)+"px";
+  tip.style.top="14px";
 }
-cv.addEventListener("mousemove", e=>{ const i=locate(e.clientX); if(i!=null) showTip(i,e.clientX); });
-cv.addEventListener("mouseleave", ()=>{ tip.style.display="none"; draw(); });
-cv.addEventListener("touchstart", e=>{ const i=locate(e.touches[0].clientX); if(i!=null) showTip(i); }, {passive:true});
-cv.addEventListener("touchmove", e=>{ const i=locate(e.touches[0].clientX); if(i!=null) showTip(i); }, {passive:true});
-cv.addEventListener("touchend", ()=>{ tip.style.display="none"; draw(); });
-window.addEventListener("resize", ()=>{ if(view.length) draw(); });
+function hideTip(){ tip.style.display="none"; hoverIdx=null; drawOverlay(); }
+
+/* ---------- zones for pointer intent ---------- */
+function zoneOf(clientX,clientY){
+  if(!geo) return "body";
+  const r=cv.getBoundingClientRect(), x=clientX-r.left, y=clientY-r.top;
+  if(x<geo.x0) return "yaxis";
+  if(y>geo.y1) return "xaxis";
+  return "body";
+}
+cv.addEventListener("mousemove",e=>{
+  if(drag.active) return;
+  const z=zoneOf(e.clientX,e.clientY);
+  cv.style.cursor = z==="yaxis" ? "ns-resize" : z==="xaxis" ? "ew-resize" : "grab";
+  if(z==="body") showTip(e.clientX); else hideTip();
+});
+cv.addEventListener("mouseleave",hideTip);
+
+/* ---------- drag: pan / stretch ---------- */
+const drag={active:false,mode:null,x:0,y:0,t0:0,t1:0,yz:1};
+function dragStart(clientX,clientY){
+  drag.active=true; drag.mode=zoneOf(clientX,clientY);
+  drag.x=clientX; drag.y=clientY; drag.t0=win.t0; drag.t1=win.t1; drag.yz=yZoom;
+  if(drag.mode==="body") cv.style.cursor="grabbing";
+  hideTip();
+}
+function dragMove(clientX,clientY){
+  if(!drag.active||!geo) return;
+  const dx=clientX-drag.x, dy=clientY-drag.y, plotW=geo.x1-geo.x0;
+  if(drag.mode==="body"){
+    const dt=-dx/plotW*(drag.t1-drag.t0);
+    setWindow(drag.t0+dt, drag.t1+dt); clearPresets();
+  }else if(drag.mode==="xaxis"){
+    const f=Math.exp(-dx/220);                       // drag left = show more time
+    const span=clamp((drag.t1-drag.t0)*f, 30*DAY, T_MAX-T_MIN);
+    setWindow(drag.t1-span, drag.t1); clearPresets();
+  }else{
+    yZoom=clamp(drag.yz*Math.exp(-dy/220), 0.25, 5); // drag down = flatter
+  }
+  requestDraw();
+}
+function dragEnd(){ drag.active=false; drag.mode=null; cv.style.cursor="grab"; }
+
+cv.addEventListener("mousedown",e=>{ dragStart(e.clientX,e.clientY); e.preventDefault(); });
+window.addEventListener("mousemove",e=>{ if(drag.active) dragMove(e.clientX,e.clientY); });
+window.addEventListener("mouseup",()=>{ if(drag.active) dragEnd(); });
+
+cv.addEventListener("wheel",e=>{
+  if(!geo) return;
+  e.preventDefault();
+  const r=cv.getBoundingClientRect();
+  const t=win.t0+(e.clientX-r.left-geo.x0)/(geo.x1-geo.x0)*(win.t1-win.t0);
+  zoomAt(clamp(t,win.t0,win.t1), e.deltaY>0?1.18:1/1.18);
+  clearPresets(); requestDraw();
+},{passive:false});
+
+cv.addEventListener("dblclick",()=>{
+  setWindow(T_MIN,T_MAX); yZoom=1;
+  clearPresets(); document.querySelector('#ranges button[data-y="0"]').classList.add("on");
+  requestDraw();
+});
+
+/* ---------- touch: directional lock via touch-action:pan-y ---------- */
+let pinch=null, tapT=0;
+cv.addEventListener("touchstart",e=>{
+  if(e.touches.length===2){
+    const [a,b]=e.touches;
+    pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),
+           t0:win.t0,t1:win.t1,
+           cx:(a.clientX+b.clientX)/2};
+    drag.active=false;
+  }else if(e.touches.length===1){
+    const now=Date.now();
+    if(now-tapT<300){                                   // double-tap = reset
+      setWindow(T_MIN,T_MAX); yZoom=1; clearPresets();
+      document.querySelector('#ranges button[data-y="0"]').classList.add("on");
+      requestDraw(); tapT=0; return;
+    }
+    tapT=now;
+    dragStart(e.touches[0].clientX,e.touches[0].clientY);
+    if(drag.mode==="body") showTip(e.touches[0].clientX);
+  }
+},{passive:true});
+
+cv.addEventListener("touchmove",e=>{
+  if(pinch&&e.touches.length===2){
+    const [a,b]=e.touches;
+    const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    const r=cv.getBoundingClientRect();
+    const t=pinch.t0+(pinch.cx-r.left-geo.x0)/(geo.x1-geo.x0)*(pinch.t1-pinch.t0);
+    const span=clamp((pinch.t1-pinch.t0)*(pinch.d/Math.max(d,1)),30*DAY,T_MAX-T_MIN);
+    const frac=(t-pinch.t0)/(pinch.t1-pinch.t0);
+    setWindow(t-frac*span,t-frac*span+span);
+    clearPresets(); requestDraw(); e.preventDefault(); return;
+  }
+  if(!drag.active||e.touches.length!==1) return;
+  const tch=e.touches[0];
+  // horizontal intent is ours; vertical is left to the page (touch-action:pan-y)
+  if(drag.mode==="body" && Math.abs(tch.clientX-drag.x)<6 && Math.abs(tch.clientY-drag.y)>8) return;
+  dragMove(tch.clientX,tch.clientY);
+  if(e.cancelable) e.preventDefault();
+},{passive:false});
+
+cv.addEventListener("touchend",()=>{ if(drag.active) dragEnd(); pinch=null; });
+
+/* ---------- presets ---------- */
+document.getElementById("ranges").addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b) return;
+  clearPresets(); b.classList.add("on");
+  const y=+b.dataset.y;
+  yZoom=1;
+  if(!y) setWindow(T_MIN,T_MAX);
+  else setWindow(T_MAX-y*365.25*DAY, T_MAX);
+  requestDraw();
+});
+window.addEventListener("resize",()=>{ if(D.length) requestDraw(); });
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(D.length) requestDraw(); });
 })();
 </script>
-
 <script>
 (function(){
-  var ID = "chart";
-  function h(){
-    var b = document.body, e = document.documentElement;
-    return Math.max(b.scrollHeight, b.offsetHeight, e.scrollHeight, e.offsetHeight);
-  }
-  var last = 0;
-  function post(){
-    var v = h();
-    if (Math.abs(v - last) < 2) return;
-    last = v;
-    parent.postMessage({ type: "gresham-embed-height", id: ID, height: v }, "*");
-  }
-  window.addEventListener("load", function(){ post(); setTimeout(post, 300); setTimeout(post, 1200); });
-  window.addEventListener("resize", post);
-  if (window.ResizeObserver){ try { new ResizeObserver(post).observe(document.body); } catch(e){} }
-  document.addEventListener("click", function(){ setTimeout(post, 60); });
-  setInterval(post, 2000);
+  var ID="chart";
+  function h(){var b=document.body,e=document.documentElement;
+    return Math.max(b.scrollHeight,b.offsetHeight,e.scrollHeight,e.offsetHeight);}
+  var last=0;
+  function post(){var v=h(); if(Math.abs(v-last)<2)return; last=v;
+    parent.postMessage({type:"gresham-embed-height",id:ID,height:v},"*");}
+  window.addEventListener("load",function(){post();setTimeout(post,300);setTimeout(post,1200);});
+  window.addEventListener("resize",post);
+  if(window.ResizeObserver){try{new ResizeObserver(post).observe(document.body);}catch(e){}}
+  setInterval(post,2000);
 })();
 </script>
 </body>
