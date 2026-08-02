@@ -5,13 +5,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gresham Index — ROI on deposited capital</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0E1520; --card:#17212F; --card2:#1C2836; --line:#243141;
     --txt:#E8EDF4; --mut:#8A94A6; --dim:#5A6474;
     --grn:#22C55E; --grnsoft:#8BE6A8; --red:#EF4444; --gold:#EAB308;
-    --disp:'Space Grotesk',system-ui,sans-serif; --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --disp:'Space Grotesk',system-ui,sans-serif; --body:'IBM Plex Sans',system-ui,-apple-system,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:100vh}
@@ -40,7 +40,7 @@
   .num input{flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-family:var(--disp);font-size:20px;font-weight:700;padding:11px 12px 11px 0;width:100%}
   select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-family:var(--disp);font-size:16px;font-weight:700;padding:12px}
   .dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-  input[type=date]{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-family:var(--disp);font-size:14px;padding:10px 12px;color-scheme:dark}
+  input[type=date]{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-family:var(--mono);font-family:var(--disp);font-size:14px;padding:10px 12px;color-scheme:dark}
   .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
   @media(max-width:760px){.cards{grid-template-columns:1fr}}
   .scard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
@@ -60,12 +60,19 @@
 .ltab{background:none;border:1px solid #243141;color:#8A94A6;font-size:11.5px;padding:3px 10px;border-radius:999px;cursor:pointer}
 .ltab.on{color:#E8EDF4;border-color:#3B4C66;background:#1C2836}
 #ltable td{padding:5px 8px;border-top:1px solid #1C2836;text-align:right;white-space:nowrap}
+#ltable td:first-child{font-family:var(--mono);font-size:11.5px}
+#asof{font-family:var(--mono)}
 #ltable td:nth-child(-n+3){text-align:left}
 .zchip{display:inline-block;padding:0 7px;border-radius:999px;font-size:10.5px;font-weight:600;color:#0B111A}
   .ptitle{font-size:26px;line-height:1.2;margin:14px 0 18px;letter-spacing:-.01em}
   html.embed header, html.embed .ptitle{display:none}
   html.embed body{padding:0;background:transparent}
   html.embed .wrap{max-width:none;padding:0}
+  /* framed: flush at top, but keep side gutters on narrow screens so the
+     cards don't touch the edge (desktop keeps 0 — the page container owns it) */
+  @media (max-width:760px){
+    html.embed .wrap{padding-left:16px;padding-right:16px}
+  }
 </style>
 </head>
 <body>
@@ -114,12 +121,12 @@
       <div class="stats"></div>
     </div>
     <div class="scard" id="cBuy">
-      <h3 style="color:var(--grnsoft)">Smart DCA</h3><div class="tag">deposits at Gresham Index multiples, never sells</div>
+      <h3 style="color:var(--grnsoft)">Smart DCA strategy</h3><div class="tag">deposits at Gresham Index multiples, never sells</div>
       <div class="roi" style="color:var(--grnsoft)">—</div><div class="roilbl">profit on deposited money</div>
       <div class="stats"></div>
     </div>
     <div class="scard hero2" id="cFull">
-      <h3 style="color:var(--gold)">Full Cycle</h3><div class="tag">same deposits as buy-only · sells stay as USDT &amp; redeploy</div>
+      <h3 style="color:var(--gold)">Full Cycle strategy</h3><div class="tag">same deposits as Smart DCA · sells stay as cash &amp; redeploy</div>
       <div class="roi" style="color:var(--gold)">—</div><div class="roilbl">profit on deposited money</div>
       <div class="stats"></div>
     </div>
@@ -130,8 +137,8 @@
     <canvas id="chart" height="260"></canvas>
     <div class="legend">
       <span><span class="dot" style="background:#7C8698"></span>Plain DCA</span>
-      <span><span class="dot" style="background:#22C55E"></span>Smart DCA</span>
-      <span><span class="dot" style="background:#EAB308"></span>Full Cycle</span>
+      <span><span class="dot" style="background:#22C55E"></span>Smart DCA strategy</span>
+      <span><span class="dot" style="background:#EAB308"></span>Full Cycle strategy</span>
     </div>
   </div>
 
@@ -140,8 +147,8 @@
       <span>SIMULATED TRADE HISTORY</span>
       <span id="ltabs" style="display:flex;gap:6px">
         <button class="ltab" data-m="plain">Plain DCA</button>
-        <button class="ltab" data-m="buyonly">Smart DCA</button>
-        <button class="ltab on" data-m="full">Full Cycle</button>
+        <button class="ltab" data-m="buyonly">Smart DCA strategy</button>
+        <button class="ltab on" data-m="full">Full Cycle strategy</button>
       </span>
     </h4>
     <div style="overflow-x:auto">
@@ -240,7 +247,7 @@ function fillCard(el, x){
     ["Final balance", fmt$(x.bal)],
     ["Profit", fmt$(x.bal - x.called)],
     ["Of which BTC", x.btc.toFixed(3) + " BTC"],
-    ["Of which cash (USDT)", fmt$(x.cash)],
+    ["Of which cash", fmt$(x.cash)],
   ];
   for (const [a,b] of rows){
     const d = document.createElement("div"); d.className = "stat";
@@ -374,7 +381,7 @@ render();
   const tip = document.createElement("div");
   tip.style.cssText = "position:absolute;display:none;pointer-events:none;background:#0B111Aee;border:1px solid #243141;border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.55;white-space:nowrap;z-index:9";
   c.parentNode.appendChild(tip);
-  const NAMES = ["Plain DCA", "Smart DCA", "Full Cycle"];
+  const NAMES = ["Plain DCA", "Smart DCA strategy", "Full Cycle strategy"];
   function show(clientX){
     const rs = window.__results; if (!rs) return;
     const rect = c.getBoundingClientRect(), W = c.clientWidth, H = 260, PR = 84;
@@ -445,7 +452,7 @@ function renderLedger(){
     `<th style="text-align:left;padding:6px 8px">Date</th>` +
     `<th style="text-align:left;padding:6px 8px">Zone</th>` +
     `<th style="text-align:left;padding:6px 8px">Action</th>` +
-    th("Price") + th("BTC total") + (withCash ? th("Cash (USDT)") : "") + th("Deposited") + th("Value") + `</tr>`;
+    th("Price") + th("BTC total") + (withCash ? th("Cash") : "") + th("Deposited") + th("Value") + `</tr>`;
   let html = "";
   for (let i = 0; i < show; i++){
     const tr = T[i];
@@ -459,7 +466,7 @@ function renderLedger(){
   const eDeep = Math.min(15 * k, 50).toFixed(0), eMid = Math.min(8 * k, 30).toFixed(0);
   const eHi = Math.min(4 * k, 20).toFixed(1), eLo = Math.min(1.5 * k, 8).toFixed(1);
   $("llegend").innerHTML =
-    `<b>Sells</b> take ${eLo}% / ${eHi}% of the BTC stack in Distribution / Heavy Distribution; proceeds stay as USDT cash. ` +
+    `<b>Sells</b> take ${eLo}% / ${eHi}% of the BTC stack in Distribution / Heavy Distribution; proceeds stay as cash in your balance. ` +
     `<b>Reserve buys</b> put ${eMid}% / ${eDeep}% of that cash back into BTC in Strong / Heavy Accumulation, on top of the deposit.`;
   $("lmore").textContent = ledgerOpen ? "Collapse" : `Show all ${N} rows`;
   $("lcount").textContent = ledgerOpen ? "" : `showing ${show} of ${N}`;
