@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gresham Index — ROI on deposited capital</title>
@@ -61,6 +62,10 @@
 #ltable td{padding:5px 8px;border-top:1px solid #1C2836;text-align:right;white-space:nowrap}
 #ltable td:nth-child(-n+3){text-align:left}
 .zchip{display:inline-block;padding:0 7px;border-radius:999px;font-size:10.5px;font-weight:600;color:#0B111A}
+  .ptitle{font-size:26px;line-height:1.2;margin:14px 0 18px;letter-spacing:-.01em}
+  html.embed header, html.embed .ptitle{display:none}
+  html.embed body{padding:0;background:transparent}
+  html.embed .wrap{max-width:none;padding:0}
 </style>
 </head>
 <body>
@@ -68,17 +73,10 @@
   <header>
     <div class="mark"></div>
     <h1>GRESHAM INDEX</h1>
-    <span>ROI on deposits · simulator #2</span>
+    <span>DCA simulator</span>
   </header>
 
-  <div class="hero">
-    <h2>How much profit per dollar deposited?<br><em>Same savings. One difference: selling.</em></h2>
-    <p>Think of your exchange account: your strategy balance is everything inside it — BTC plus the USDT from any sales, waiting for the next green zone. You keep saving every period regardless. The question is the simplest one in investing: <strong>what % profit did your deposited money make?</strong></p>
-  </div>
-
-  <div class="assume">
-    <b>The model, stated plainly:</b> you keep saving on schedule — your deposit each period is the base amount &times; the Gresham Index multiplier (that's fresh money, even in green zones). Cash from sales never leaves: it stays in your balance as USDT and redeploys on top of your deposits when the strategy says so. Smart DCA and Full Cycle deposit <b>exactly the same money</b> — the entire gap between them is the value of selling tops and recycling. For the fixed-budget comparison, see simulator&nbsp;#1.
-  </div>
+  <h2 class="ptitle">Compare the strategies on your own schedule</h2>
 
   <div class="panel">
     <div class="label">My DCA schedule &amp; period</div>
@@ -160,7 +158,7 @@
   </div>
 
   <footer>
-    Historical data through <span id="asof">—</span> · prices in USD · backtest of the v1.0.1 rules under the committed-saver model (fresh deposits = base &times; multiplier every period; sell tranches of 1.5%/4% per week scaled to schedule, proceeds retained in balance as USDT; reserve deployment of 15%/8% per week in green zones on top of deposits) · historical results do not guarantee future performance · informational and educational tool, not investment advice · crypto assets are volatile — invest only what you can afford to lose.
+    Historical data through <span id="asof">—</span> · committed-saver backtest of the frozen v1.0.1 rules, prices in USD · past results do not indicate future performance · educational tool, not investment advice.
   </footer>
 </div>
 
@@ -269,13 +267,23 @@ function draw(results){
     g.beginPath(); g.moveTo(8,y); g.lineTo(W-8-PR,y); g.stroke();
     g.fillText(fmtPct(v), 12, y-4);
   }
-  // year ticks
+  // year ticks — thinned to the space actually available, newest year always shown
+  const marks = [];
   let lastYear = "";
   results[0].res.idx.forEach((di,i)=>{
     const y = DATA[di][0].slice(0,4);
     if (i===0){ lastYear=y; return; }
-    if (y!==lastYear){ g.fillStyle="#5A6474"; g.fillText(y, px(i)-12, H-6); lastYear=y; }
+    if (y!==lastYear){ marks.push({y, i}); lastYear=y; }
   });
+  if (marks.length){
+    const avail = W - 16 - PR;
+    const need  = g.measureText("2024").width + 16;
+    const step  = Math.max(1, Math.ceil(marks.length * need / avail));
+    g.fillStyle = "#5A6474";
+    marks.forEach((m,k)=>{
+      if ((marks.length - 1 - k) % step === 0) g.fillText(m.y, px(m.i)-12, H-6);
+    });
+  }
   // lines + end labels (nudged apart)
   const ends = results.map((r,j)=>({ y: py(r.res.roiCurve[n-1]), col: r.col, txt: fmtPct(r.res.roi) }));
   ends.sort((a,b)=>a.y-b.y);
@@ -451,9 +459,8 @@ function renderLedger(){
   const eDeep = Math.min(15 * k, 50).toFixed(0), eMid = Math.min(8 * k, 30).toFixed(0);
   const eHi = Math.min(4 * k, 20).toFixed(1), eLo = Math.min(1.5 * k, 8).toFixed(1);
   $("llegend").innerHTML =
-    `<b>Sells</b> take ${eLo}% (Distribution) or ${eHi}% (Heavy Distribution) of the accumulated <b>BTC stack</b> per buy period; proceeds stay in the balance as USDT cash. ` +
-    `<b>Reserve buys</b> deploy that cash back into BTC on top of the regular deposit: ${eDeep}% of the reserve per period in Heavy Accumulation, ${eMid}% in Strong Accumulation ` +
-    `(spec rates are 15%/8% per week, scaled to your cadence and capped) \u2014 so each reserve buy is smaller than the last until the cash is spent.`;
+    `<b>Sells</b> take ${eLo}% / ${eHi}% of the BTC stack in Distribution / Heavy Distribution; proceeds stay as USDT cash. ` +
+    `<b>Reserve buys</b> put ${eMid}% / ${eDeep}% of that cash back into BTC in Strong / Heavy Accumulation, on top of the deposit.`;
   $("lmore").textContent = ledgerOpen ? "Collapse" : `Show all ${N} rows`;
   $("lcount").textContent = ledgerOpen ? "" : `showing ${show} of ${N}`;
 }
