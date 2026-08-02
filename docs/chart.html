@@ -33,6 +33,8 @@
   #wrap{position:relative}
   canvas{width:100%;display:block;touch-action:pan-y}
   #cvo{position:absolute;left:0;top:0;pointer-events:none}
+  #yzone,#xzone{position:absolute;display:none;touch-action:none;background:transparent}
+  #yzone{cursor:ns-resize} #xzone{cursor:ew-resize}
   #tip{position:absolute;pointer-events:none;background:#0B111Aee;border:1px solid var(--line);border-radius:10px;
        padding:8px 11px;font-size:12.5px;line-height:1.5;display:none;white-space:nowrap;z-index:5}
   #tip .d{font-family:var(--f-mono);color:var(--muted);font-size:11px}
@@ -50,7 +52,7 @@
 <body>
 <div class="card">
   <div class="head">
-    <div class="kicker"><b>GRESHAM INDEX</b> — BITCOIN, COLORED BY CYCLE RISK</div>
+    <div class="kicker"><b>GRESHAM INDEX</b> — BTC/USD, COLORED BY CYCLE RISK</div>
     <div class="ranges" id="ranges">
       <button data-y="0" class="on">All</button><button data-y="4">4y</button><button data-y="1">1y</button>
     </div>
@@ -59,6 +61,8 @@
     <div id="state">loading live data…</div>
     <canvas id="cv" style="display:none"></canvas>
     <canvas id="cvo" style="display:none"></canvas>
+    <div id="yzone"></div>
+    <div id="xzone"></div>
     <div id="tip"></div>
   </div>
   <div class="legend" id="legend"></div>
@@ -105,7 +109,7 @@ fetch(URLS[0]).then(r=>{if(!r.ok)throw 0;return r.json();})
     const last=D[D.length-1];
     document.getElementById("foot").innerHTML=
       `<b>Live</b> · data through <span class="mono">${last.d}</span> · latest reading <b style="font-family:var(--f-disp)">${last.r.toFixed(3)}</b> — ${band(last.r).n}`+
-      ` · frozen v1.0.1 rules · Data: CoinMetrics Community (CC BY-NC 4.0)`;
+      ` · daily close, log scale · frozen v1.0.1 rules · Data: CoinMetrics Community (CC BY-NC 4.0)`;
     state.style.display="none"; cv.style.display="block"; document.getElementById("cvo").style.display="block";
     draw();
   }).catch(e=>{ state.textContent="Could not load live data. Please refresh."; });
@@ -281,6 +285,7 @@ function draw(){
   }
   g.restore();
   drawOverlay();
+  placeZones();
 }
 
 // crosshair only — cheap, runs on every mouse move
@@ -318,108 +323,138 @@ function showTip(clientX){
 }
 function hideTip(){ tip.style.display="none"; hoverIdx=null; drawOverlay(); }
 
-/* ---------- zones for pointer intent ---------- */
-function zoneOf(clientX,clientY){
-  if(!geo) return "body";
-  const r=cv.getBoundingClientRect(), x=clientX-r.left, y=clientY-r.top;
-  if(x<geo.x0) return "yaxis";
-  if(y>geo.y1) return "xaxis";
-  return "body";
-}
-cv.addEventListener("mousemove",e=>{
-  if(drag.active) return;
-  const z=zoneOf(e.clientX,e.clientY);
-  cv.style.cursor = z==="yaxis" ? "ns-resize" : z==="xaxis" ? "ew-resize" : "grab";
-  if(z==="body") showTip(e.clientX); else hideTip();
-});
-cv.addEventListener("mouseleave",hideTip);
-
-/* ---------- drag: pan / stretch ---------- */
-const drag={active:false,mode:null,x:0,y:0,t0:0,t1:0,yz:1};
-function dragStart(clientX,clientY){
-  drag.active=true; drag.mode=zoneOf(clientX,clientY);
-  drag.x=clientX; drag.y=clientY; drag.t0=win.t0; drag.t1=win.t1; drag.yz=yZoom;
-  if(drag.mode==="body") cv.style.cursor="grabbing";
-  hideTip();
-}
-function dragMove(clientX,clientY){
-  if(!drag.active||!geo) return;
-  const dx=clientX-drag.x, dy=clientY-drag.y, plotW=geo.x1-geo.x0;
-  if(drag.mode==="body"){
-    const dt=-dx/plotW*(drag.t1-drag.t0);
-    setWindow(drag.t0+dt, drag.t1+dt); clearPresets();
-  }else if(drag.mode==="xaxis"){
-    const f=Math.exp(-dx/220);                       // drag left = show more time
-    const span=clamp((drag.t1-drag.t0)*f, 30*DAY, T_MAX-T_MIN);
-    setWindow(drag.t1-span, drag.t1); clearPresets();
-  }else{
-    yZoom=clamp(drag.yz*Math.exp(-dy/220), 0.25, 5); // drag down = flatter
-  }
-  requestDraw();
-}
-function dragEnd(){ drag.active=false; drag.mode=null; cv.style.cursor="grab"; }
-
-cv.addEventListener("mousedown",e=>{ dragStart(e.clientX,e.clientY); e.preventDefault(); });
-window.addEventListener("mousemove",e=>{ if(drag.active) dragMove(e.clientX,e.clientY); });
-window.addEventListener("mouseup",()=>{ if(drag.active) dragEnd(); });
-
-cv.addEventListener("wheel",e=>{
+/* ---------- axis strips: own their gestures, including vertical touch ----------
+   These are real DOM elements with touch-action:none, so a vertical drag on the
+   price axis reaches us instead of being claimed by the page as a scroll.        */
+const yzone=document.getElementById("yzone"), xzone=document.getElementById("xzone");
+function placeZones(){
   if(!geo) return;
-  e.preventDefault();
+  yzone.style.display=xzone.style.display="block";
+  yzone.style.left="0px"; yzone.style.top=geo.y0+"px";
+  yzone.style.width=geo.x0+"px"; yzone.style.height=(geo.y1-geo.y0)+"px";
+  xzone.style.left=geo.x0+"px"; xzone.style.top=geo.y1+"px";
+  xzone.style.width=(geo.x1-geo.x0)+"px"; xzone.style.height=(geo.H-geo.y1)+"px";
+}
+function axisDrag(el,kind){
+  let sx=0,sy=0,st0=0,st1=0,syz=1,on=false;
+  el.addEventListener("pointerdown",ev=>{
+    on=true; sx=ev.clientX; sy=ev.clientY; st0=win.t0; st1=win.t1; syz=yZoom;
+    hideTip(); try{el.setPointerCapture(ev.pointerId);}catch(_){}
+    ev.preventDefault();
+  });
+  el.addEventListener("pointermove",ev=>{
+    if(!on||!geo) return;
+    if(kind==="y"){
+      yZoom=clamp(syz*Math.exp(-(ev.clientY-sy)/200),0.25,5);     // drag down = flatter
+    }else{
+      const f=Math.exp(-(ev.clientX-sx)/200);                      // drag left = more time
+      const span=clamp((st1-st0)*f,30*DAY,T_MAX-T_MIN);
+      setWindow(st1-span,st1); clearPresets();
+    }
+    requestDraw(); ev.preventDefault();
+  });
+  const stop=ev=>{ if(!on) return; on=false; try{el.releasePointerCapture(ev.pointerId);}catch(_){} };
+  el.addEventListener("pointerup",stop);
+  el.addEventListener("pointercancel",stop);
+  el.addEventListener("dblclick",()=>{ if(kind==="y"){ yZoom=1; requestDraw(); } });
+}
+axisDrag(yzone,"y"); axisDrag(xzone,"x");
+
+/* ---------- chart body: mouse ---------- */
+const pan={on:false,x:0,t0:0,t1:0};
+cv.style.cursor="grab";
+cv.addEventListener("mousemove",ev=>{ if(!pan.on) showTip(ev.clientX); });
+cv.addEventListener("mouseleave",()=>{ if(!pan.on) hideTip(); });
+cv.addEventListener("mousedown",ev=>{
+  pan.on=true; pan.x=ev.clientX; pan.t0=win.t0; pan.t1=win.t1;
+  cv.style.cursor="grabbing"; hideTip(); ev.preventDefault();
+});
+window.addEventListener("mousemove",ev=>{
+  if(!pan.on||!geo) return;
+  const dt=-(ev.clientX-pan.x)/(geo.x1-geo.x0)*(pan.t1-pan.t0);
+  setWindow(pan.t0+dt,pan.t1+dt); clearPresets(); requestDraw();
+});
+window.addEventListener("mouseup",()=>{ if(pan.on){ pan.on=false; cv.style.cursor="grab"; } });
+
+cv.addEventListener("wheel",ev=>{
+  if(!geo) return;
+  ev.preventDefault();
   const r=cv.getBoundingClientRect();
-  const t=win.t0+(e.clientX-r.left-geo.x0)/(geo.x1-geo.x0)*(win.t1-win.t0);
-  zoomAt(clamp(t,win.t0,win.t1), e.deltaY>0?1.18:1/1.18);
+  const tAt=win.t0+(ev.clientX-r.left-geo.x0)/(geo.x1-geo.x0)*(win.t1-win.t0);
+  zoomAt(clamp(tAt,win.t0,win.t1), ev.deltaY>0?1.18:1/1.18);
   clearPresets(); requestDraw();
 },{passive:false});
 
-cv.addEventListener("dblclick",()=>{
-  setWindow(T_MIN,T_MAX); yZoom=1;
-  clearPresets(); document.querySelector('#ranges button[data-y="0"]').classList.add("on");
+function resetView(){
+  setWindow(T_MIN,T_MAX); yZoom=1; hideTip(); clearPresets();
+  document.querySelector('#ranges button[data-y="0"]').classList.add("on");
   requestDraw();
-});
+}
+cv.addEventListener("dblclick",resetView);
 
-/* ---------- touch: directional lock via touch-action:pan-y ---------- */
-let pinch=null, tapT=0;
-cv.addEventListener("touchstart",e=>{
-  if(e.touches.length===2){
-    const [a,b]=e.touches;
+/* ---------- chart body: touch ----------
+   Swipe sideways to move through time. Press and hold to summon the readout,
+   which then follows your finger without moving the chart (TradingView model).  */
+const T={mode:null,x:0,y:0,t0:0,t1:0,timer:null};
+let pinch=null, lastTap=0;
+function longPressStart(x){
+  T.mode="crosshair";
+  if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(_){} }
+  showTip(x);
+}
+cv.addEventListener("touchstart",ev=>{
+  clearTimeout(T.timer);
+  if(ev.touches.length===2){
+    const [a,b]=ev.touches;
     pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),
-           t0:win.t0,t1:win.t1,
-           cx:(a.clientX+b.clientX)/2};
-    drag.active=false;
-  }else if(e.touches.length===1){
-    const now=Date.now();
-    if(now-tapT<300){                                   // double-tap = reset
-      setWindow(T_MIN,T_MAX); yZoom=1; clearPresets();
-      document.querySelector('#ranges button[data-y="0"]').classList.add("on");
-      requestDraw(); tapT=0; return;
-    }
-    tapT=now;
-    dragStart(e.touches[0].clientX,e.touches[0].clientY);
-    if(drag.mode==="body") showTip(e.touches[0].clientX);
+           t0:win.t0,t1:win.t1,cx:(a.clientX+b.clientX)/2};
+    T.mode="pinch"; hideTip(); return;
   }
+  if(ev.touches.length!==1) return;
+  const now=Date.now();
+  if(now-lastTap<300){ resetView(); lastTap=0; T.mode=null; return; }   // double-tap resets
+  lastTap=now;
+  const tc=ev.touches[0];
+  T.mode="undecided"; T.x=tc.clientX; T.y=tc.clientY; T.t0=win.t0; T.t1=win.t1;
+  T.timer=setTimeout(()=>{ if(T.mode==="undecided") longPressStart(T.x); },330);
 },{passive:true});
 
-cv.addEventListener("touchmove",e=>{
-  if(pinch&&e.touches.length===2){
-    const [a,b]=e.touches;
+cv.addEventListener("touchmove",ev=>{
+  if(T.mode==="pinch"&&pinch&&ev.touches.length===2){
+    const [a,b]=ev.touches;
     const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
     const r=cv.getBoundingClientRect();
-    const t=pinch.t0+(pinch.cx-r.left-geo.x0)/(geo.x1-geo.x0)*(pinch.t1-pinch.t0);
+    const tAt=pinch.t0+(pinch.cx-r.left-geo.x0)/(geo.x1-geo.x0)*(pinch.t1-pinch.t0);
     const span=clamp((pinch.t1-pinch.t0)*(pinch.d/Math.max(d,1)),30*DAY,T_MAX-T_MIN);
-    const frac=(t-pinch.t0)/(pinch.t1-pinch.t0);
-    setWindow(t-frac*span,t-frac*span+span);
-    clearPresets(); requestDraw(); e.preventDefault(); return;
+    const frac=(tAt-pinch.t0)/(pinch.t1-pinch.t0);
+    setWindow(tAt-frac*span,tAt-frac*span+span);
+    clearPresets(); requestDraw();
+    if(ev.cancelable) ev.preventDefault();
+    return;
   }
-  if(!drag.active||e.touches.length!==1) return;
-  const tch=e.touches[0];
-  // horizontal intent is ours; vertical is left to the page (touch-action:pan-y)
-  if(drag.mode==="body" && Math.abs(tch.clientX-drag.x)<6 && Math.abs(tch.clientY-drag.y)>8) return;
-  dragMove(tch.clientX,tch.clientY);
-  if(e.cancelable) e.preventDefault();
+  if(ev.touches.length!==1||!geo) return;
+  const tc=ev.touches[0], dx=tc.clientX-T.x, dy=tc.clientY-T.y;
+  if(T.mode==="undecided"){
+    if(Math.abs(dx)>10&&Math.abs(dx)>=Math.abs(dy)){ clearTimeout(T.timer); T.mode="pan"; hideTip(); }
+    else if(Math.abs(dy)>10){ clearTimeout(T.timer); T.mode="scroll"; return; }  // hand back to the page
+    else return;
+  }
+  if(T.mode==="pan"){
+    const dt=-dx/(geo.x1-geo.x0)*(T.t1-T.t0);
+    setWindow(T.t0+dt,T.t1+dt); clearPresets(); requestDraw();
+    if(ev.cancelable) ev.preventDefault();
+  }else if(T.mode==="crosshair"){
+    showTip(tc.clientX);                    // readout moves, chart stays put
+    if(ev.cancelable) ev.preventDefault();
+  }
 },{passive:false});
 
-cv.addEventListener("touchend",()=>{ if(drag.active) dragEnd(); pinch=null; });
+cv.addEventListener("touchend",ev=>{
+  clearTimeout(T.timer);
+  if(T.mode==="undecided") showTip(T.x);    // a plain tap still places the readout
+  if(ev.touches.length===0){ T.mode=null; pinch=null; }
+});
+cv.addEventListener("touchcancel",()=>{ clearTimeout(T.timer); T.mode=null; pinch=null; });
 
 /* ---------- presets ---------- */
 document.getElementById("ranges").addEventListener("click",ev=>{
