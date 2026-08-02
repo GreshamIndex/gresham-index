@@ -113,7 +113,7 @@ function writeJSON(file, data) {
   // record.json — THE LEDGER. Append-only; never modify existing entries.
   const record = readJSON("record.json", { note: "As-published, append-only track record. Entries are immutable once written; every entry carries the git commit that published it.", entries: [] });
   if (!record.entries.some(e => e.date === dataThrough)) {
-    record.entries.push({ date: dataThrough, value: r, zone: z.zone,
+    record.entries.push({ date: dataThrough, value: r, zone: z.zone, zone_name: z.zone_name,
                           price_usd: Math.round(price[li] * 100) / 100,
                           computed_at: computedAt, stale });
   }
