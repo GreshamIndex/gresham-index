@@ -4,8 +4,13 @@ name: Publish Gresham Index
 
 on:
   schedule:
-    - cron: "47 6 * * *"    # attempt 1 — daily 06:47 UTC
-    - cron: "47 13 * * *"   # attempt 2 — self-heals if GitHub skips/delays the morning
+    # GitHub's free scheduler often skips or delays a run, so we attempt hourly
+    # through the morning and then every two hours. run_daily.js is idempotent:
+    # if today's reading is already published it exits without committing, so
+    # the first attempt GitHub actually honours wins and the rest are no-ops.
+    # Offset minutes avoid :00, which is GitHub's most congested slot.
+    - cron: "17 5,6,7,8,9,10 * * *"   # hourly through the morning (UTC)
+    - cron: "17 12,14,16,18 * * *"    # fallbacks through the afternoon
   workflow_dispatch:        # adds a manual "Run workflow" button
 
 permissions:
@@ -21,7 +26,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Compute today's index
         run: node run_daily.js
