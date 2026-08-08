@@ -98,20 +98,29 @@
     "https://greshamindex.github.io/gresham-index/latest.json",
     "https://raw.githubusercontent.com/greshamindex/gresham-index/main/docs/latest.json"
   ];
+  // Query BOTH sources and use whichever carries the later data date.
+  // Pages sits behind a CDN that can serve a stale file for minutes after a
+  // publish (or fail to deploy at all); raw.githubusercontent reflects git
+  // immediately. Racing them means neither being stale nor being down matters.
   (async function(){
-    for (const url of LIVE_URLS){
+    const bust = "?t=" + Date.now();
+    const got = await Promise.all(LIVE_URLS.map(async u => {
       try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) continue;
+        const res = await fetch(u + bust, { cache: "no-store" });
+        if (!res.ok) return null;
         const j = await res.json();
-        if (typeof j.value !== "number") continue;
-        drawGauge(j.value);
-        setReadout(j.value, "live \u00b7 through " + (j.data_through || "") + (j.stale ? " \u00b7 \u26a0 stale" : ""));
-        $("foot").innerHTML = "frozen v1.0.1 rules \u00b7 Data: CoinMetrics Community (CC BY-NC 4.0)";
-        return;
-      } catch (e) { /* try next */ }
+        return (typeof j.value === "number" && j.data_through) ? j : null;
+      } catch (e) { return null; }
+    }));
+    const ok = got.filter(Boolean);
+    if (ok.length){
+      ok.sort((a, b) => b.data_through.localeCompare(a.data_through));
+      const j = ok[0];
+      drawGauge(j.value);
+      setReadout(j.value, "live \u00b7 through " + j.data_through + (j.stale ? " \u00b7 \u26a0 stale" : ""));
+    } else {
+      setReadout(0.316, "data unavailable \u2014 live feed offline");
     }
-    setReadout(0.316, "data unavailable \u2014 live feed offline");
     $("foot").innerHTML = "frozen v1.0.1 rules \u00b7 Data: CoinMetrics Community (CC BY-NC 4.0)";
   })();
 })();

@@ -98,8 +98,19 @@ const PADL=56,PADR=14,PADT=10,PADB=26;
 
 document.getElementById("legend").innerHTML=
   BANDS.map(b=>`<span><i style="background:${b.c}"></i>${b.n}</span>`).join("");
-fetch(URLS[0]).then(r=>{if(!r.ok)throw 0;return r.json();})
-  .catch(()=>fetch(URLS[1]).then(r=>r.json()))
+// Query BOTH sources and keep whichever has the later last date — Pages can
+// serve a stale file (or fail to deploy) while raw reflects git immediately.
+Promise.all(URLS.map(u =>
+  fetch(u + "?t=" + Date.now(), {cache:"no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => (j && j.series && j.series.length) ? j : null)
+    .catch(() => null)
+)).then(list => {
+  const ok = list.filter(Boolean);
+  if(!ok.length) throw new Error("no source");
+  ok.sort((a,b) => b.series[b.series.length-1][0].localeCompare(a.series[a.series.length-1][0]));
+  return ok[0];
+})
   .then(j=>{
     D=j.series.filter(s=>s[0]>="2014-01-01")
       .map(s=>({t:Date.parse(s[0]+"T00:00:00Z"),d:s[0],r:s[1],p:s[2]}));

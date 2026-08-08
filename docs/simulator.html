@@ -354,21 +354,29 @@ render();
     "https://greshamindex.github.io/gresham-index/history.json",
     "https://raw.githubusercontent.com/greshamindex/gresham-index/main/docs/history.json"
   ];
-  for (const url of LIVE_URLS) {
+  // Query BOTH sources and use whichever has the later last date — Pages can
+  // serve a stale file (or fail to deploy) while raw reflects git immediately.
+  const bust = "?t=" + Date.now();
+  const got = await Promise.all(LIVE_URLS.map(async u => {
     try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) continue;
+      const res = await fetch(u + bust, { cache: "no-store" });
+      if (!res.ok) return null;
       const j = await res.json();
-      if (!j.series || j.series.length < 1000) continue;
-      // live format is [date, risk, price] -> simulator format [date, price, risk]
-      DATA = j.series.filter(s => s[0] >= "2014-01-01").map(s => [s[0], s[2], s[1]]);
-      const liveLast = DATA[DATA.length - 1][0];
-      ["dFrom", "dTo"].forEach(id => { $(id).max = liveLast; });
-      if (state.to === last) { $("dTo").value = liveLast; state.to = liveLast; }
-      $("asof").textContent = liveLast + " (live)";
-      render();
-      return;
-    } catch (e) { /* try next url */ }
+      return (j && j.series && j.series.length >= 1000) ? j : null;
+    } catch (e) { return null; }
+  }));
+  const ok = got.filter(Boolean);
+  if (ok.length) {
+    ok.sort((a, b) => b.series[b.series.length-1][0].localeCompare(a.series[a.series.length-1][0]));
+    const j = ok[0];
+    // live format is [date, risk, price] -> simulator format [date, price, risk]
+    DATA = j.series.filter(s => s[0] >= "2014-01-01").map(s => [s[0], s[2], s[1]]);
+    const liveLast = DATA[DATA.length - 1][0];
+    ["dFrom", "dTo"].forEach(id => { $(id).max = liveLast; });
+    if (state.to === last) { $("dTo").value = liveLast; state.to = liveLast; }
+    $("asof").textContent = liveLast + " (live)";
+    render();
+    return;
   }
   $("asof").textContent = last + " (offline snapshot \u2014 live feed unavailable)";
 })();
