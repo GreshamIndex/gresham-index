@@ -304,6 +304,15 @@
    "price_usd": 64434.14,
    "computed_at": "2026-08-18T05:43:49.657Z",
    "stale": false
+  },
+  {
+   "date": "2026-08-18",
+   "value": 0.1697,
+   "zone": "stack_2x",
+   "zone_name": "Strong Accumulation",
+   "price_usd": 64696.18,
+   "computed_at": "2026-08-19T05:45:24.531Z",
+   "stale": false
   }
  ]
 }
