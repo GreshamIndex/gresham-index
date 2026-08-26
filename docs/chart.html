@@ -11,7 +11,7 @@
 <style>
   :root{
     --bg:#0a1018; --line:#223244; --text:#E8EDF4; --muted:#8A94A6;
-    --z0:#15803D; --z1:#22C55E; --z2:#FACC15; --z3:#F59E0B; --z4:#94A3B8; --z5:#F97316; --z6:#DC2626;
+    --z0:#0E7A4B; --z1:#22B463; --z2:#7DD957; --z3:#F0C23D; --z4:#7E8AA0; --z5:#F2853F; --z6:#E5484D;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   :root{--f-disp:'Space Grotesk',system-ui,sans-serif;
@@ -75,13 +75,13 @@
 const URLS=["https://greshamindex.github.io/gresham-index/history.json",
             "https://raw.githubusercontent.com/greshamindex/gresham-index/main/docs/history.json"];
 const BANDS=[
-  {lo:0.00,c:"#15803D",n:"Heavy Accumulation", s:"Heavy Accum."},
-  {lo:0.15,c:"#22C55E",n:"Strong Accumulation",s:"Strong Accum."},
-  {lo:0.30,c:"#FACC15",n:"Accumulation",       s:"Accum."},
-  {lo:0.50,c:"#F59E0B",n:"Light Accumulation", s:"Light Accum."},
-  {lo:0.65,c:"#94A3B8",n:"Neutral",            s:"Neutral",divider:true},
-  {lo:0.75,c:"#F97316",n:"Distribution",       s:"Distrib."},
-  {lo:0.85,c:"#DC2626",n:"Heavy Distribution", s:"Heavy Distrib."}];
+  {lo:0.00,c:"#0E7A4B",n:"Heavy Accumulation", s:"Heavy Accum."},
+  {lo:0.15,c:"#22B463",n:"Strong Accumulation",s:"Strong Accum."},
+  {lo:0.30,c:"#7DD957",n:"Accumulation",       s:"Accum."},
+  {lo:0.50,c:"#F0C23D",n:"Light Accumulation", s:"Light Accum."},
+  {lo:0.65,c:"#7E8AA0",n:"Neutral",            s:"Neutral",divider:true},
+  {lo:0.75,c:"#F2853F",n:"Distribution",       s:"Distrib."},
+  {lo:0.85,c:"#E5484D",n:"Heavy Distribution", s:"Heavy Distrib."}];
 function band(r){let b=BANDS[0];for(const x of BANDS){if(r>=x.lo)b=x;}return b;}
 
 const cv=document.getElementById("cv"), cvo=document.getElementById("cvo"), tip=document.getElementById("tip"),
