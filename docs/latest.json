@@ -1,14 +1,14 @@
 {
  "index": "Gresham Index",
  "version": "1.0.1",
- "value": 0.4289,
+ "value": 0.4318,
  "zone": "normal",
  "zone_name": "Accumulation",
  "zone_short": "Accum.",
  "action": "Buy 1× — business as usual",
- "price_usd": 83674.66,
- "data_through": "2026-09-29",
- "computed_at": "2026-09-30T21:26:36.217Z",
+ "price_usd": 83579.67,
+ "data_through": "2026-09-30",
+ "computed_at": "2026-10-01T06:10:36.549Z",
  "stale": false,
  "attribution": "Data: CoinMetrics Community (CC BY-NC 4.0)"
 }
