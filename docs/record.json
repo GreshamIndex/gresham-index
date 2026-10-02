@@ -700,6 +700,15 @@
    "price_usd": 83579.67,
    "computed_at": "2026-10-01T06:10:36.549Z",
    "stale": false
+  },
+  {
+   "date": "2026-10-01",
+   "value": 0.4345,
+   "zone": "normal",
+   "zone_name": "Accumulation",
+   "price_usd": 84777.24,
+   "computed_at": "2026-10-02T06:42:27.313Z",
+   "stale": false
   }
  ]
 }
