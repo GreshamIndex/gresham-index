@@ -1,14 +1,14 @@
 {
  "index": "Gresham Index",
  "version": "1.0.1",
- "value": 0.1727,
+ "value": 0.1708,
  "zone": "stack_2x",
  "zone_name": "Strong Accumulation",
  "zone_short": "Strong Accum.",
  "action": "Buy 2× your base + deploy 8%/wk of reserve",
- "price_usd": 59790.66,
- "data_through": "2026-11-24",
- "computed_at": "2026-11-25T20:29:38.264Z",
+ "price_usd": 60267.63,
+ "data_through": "2026-11-25",
+ "computed_at": "2026-11-26T06:56:58.831Z",
  "stale": false,
  "attribution": "Data: CoinMetrics Community (CC BY-NC 4.0)"
 }
