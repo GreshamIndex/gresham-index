@@ -1213,6 +1213,15 @@
    "price_usd": 60415.4,
    "computed_at": "2026-11-27T02:56:07.003Z",
    "stale": false
+  },
+  {
+   "date": "2026-11-27",
+   "value": 0.1674,
+   "zone": "stack_2x",
+   "zone_name": "Strong Accumulation",
+   "price_usd": 59804.12,
+   "computed_at": "2026-11-28T02:45:44.037Z",
+   "stale": false
   }
  ]
 }
